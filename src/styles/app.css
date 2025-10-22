@@ -146,7 +146,7 @@ h1, h2, h3 {
 .header-right {
   display: flex;
   gap: 16px;
-  align-items: center;
+  align-items: stretch;
 }
 
 .overlay-toggle {
@@ -163,21 +163,67 @@ h1, h2, h3 {
   height: 18px;
 }
 
+.scoreboard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 12px rgba(199, 119, 54, 0.18);
+  border: 1px solid rgba(199, 119, 54, 0.3);
+  min-width: 84px;
+  min-height: 48px;
+  justify-content: center;
+}
+
+.scoreboard.positive {
+  background: rgba(255, 220, 120, 0.4);
+  border-color: rgba(255, 193, 94, 0.8);
+}
+
+.scoreboard.negative {
+  background: rgba(214, 59, 59, 0.18);
+  border-color: rgba(214, 59, 59, 0.55);
+}
+
+.score-label {
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  color: #6f4518;
+  text-transform: uppercase;
+}
+
+.score-value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: #512716;
+}
+
 .buff-chip {
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(199, 119, 54, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 12px rgba(199, 119, 54, 0.18);
+  border: 1px solid rgba(199, 119, 54, 0.3);
   color: #5e3023;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  border: 1px solid rgba(199, 119, 54, 0.4);
+  min-height: 48px;
+  min-width: 84px;
+  text-align: center;
 }
 
 .buff-chip.active {
-  background: rgba(255, 193, 94, 0.22);
-  border-color: rgba(255, 159, 67, 0.8);
+  background: rgba(255, 220, 120, 0.4);
+  border-color: rgba(255, 193, 94, 0.8);
   color: #8a4b02;
-  box-shadow: 0 0 18px rgba(255, 200, 120, 0.45);
+  box-shadow: inset 0 0 12px rgba(255, 193, 94, 0.25);
 }
 
 .game-grid {

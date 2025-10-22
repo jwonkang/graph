@@ -5,6 +5,8 @@ let overlayToggle;
 let endDayButton;
 let sliderValues = {};
 let metricNodes = {};
+let scoreNode;
+let scoreBoardNode;
 
 export function initControls(handlers) {
   qualitySlider = document.getElementById("qualitySlider");
@@ -12,6 +14,8 @@ export function initControls(handlers) {
   outputSlider = document.getElementById("outputSlider");
   overlayToggle = document.getElementById("overlay-toggle");
   endDayButton = document.getElementById("end-day");
+  scoreBoardNode = document.getElementById("profit-scoreboard");
+  scoreNode = document.getElementById("profit-score");
 
   sliderValues.quality = document.querySelector('[data-value="quality"]');
   sliderValues.advertising = document.querySelector('[data-value="advertising"]');
@@ -91,4 +95,19 @@ export function updateMetricsDisplay(metrics) {
   if (metricNodes.brand) metricNodes.brand.textContent = metrics.brand.toFixed(1);
   if (metricNodes.cumulative) metricNodes.cumulative.textContent = metrics.cumulative.toFixed(1);
   if (metricNodes.rivals) metricNodes.rivals.textContent = String(metrics.rivals);
+
+  const score = metrics.points ?? metrics.cumulative;
+  if (scoreNode) {
+    if (Number.isFinite(score)) {
+      scoreNode.textContent = score.toFixed(2);
+    } else {
+      scoreNode.textContent = "—";
+    }
+  }
+
+  if (scoreBoardNode) {
+    const numericScore = Number.isFinite(score) ? score : 0;
+    scoreBoardNode.classList.toggle("positive", numericScore > 0);
+    scoreBoardNode.classList.toggle("negative", numericScore < 0);
+  }
 }

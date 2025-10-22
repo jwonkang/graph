@@ -132,6 +132,7 @@ function handleOverlayToggle(enabled) {
 function handleEndDay() {
   if (state.rushRunning) return;
   const metricsSnapshot = { ...state.metrics };
+  clearDialogue();
   state.rushRunning = true;
   priceTauntTriggered = false;
   setControlsDisabled(true);
@@ -295,7 +296,8 @@ function computeAndRender() {
     profit: profitVal,
     brand: state.brand,
     cumulative: state.cumulativeProfit,
-    rivals: rivalsCount()
+    rivals: rivalsCount(),
+    points: state.cumulativeProfit
   });
 
   updateCurveChart({
