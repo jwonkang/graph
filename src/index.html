@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Latte Wars ☕ – The Caffeine Chronicles</title>
+  <link rel="stylesheet" href="styles/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.2/dist/chartjs-plugin-annotation.min.js"></script>
+</head>
+<body>
+  <div id="title-screen" class="title-screen active">
+    <div class="title-card">
+      <h1>Latte Wars ☕</h1>
+      <p class="subtitle">The Caffeine Chronicles of Marketville</p>
+      <div class="scroll-text">
+        <p>Marketville, 5:45 AM. Neon signs buzz. Steam hisses. Too many cafés, not enough sleep.</p>
+        <p>You: a caffeine dreamer with a rent bill and a stubborn espresso machine. Mentor: Ms. Park—barista savant, econ professor, part-time chaos gremlin.</p>
+        <p>Ms. Park: “Rule of thumb? Marginal Revenue equals Marginal Cost. Otherwise, you’re basically pouring profits down the drain.”</p>
+        <p>Welcome to Latte Wars. Learn the curves, dodge the rivals, keep the crema silky. Press start and brew destiny.</p>
+      </div>
+      <button id="start-brewing" class="primary">Start Brewing</button>
+    </div>
+  </div>
+
+  <main id="game-screen" class="game-screen hidden">
+    <header class="game-header">
+      <div class="header-left">
+        <h2 id="scene-title">Prologue – The Spill</h2>
+        <p id="round-label">Day 0</p>
+      </div>
+      <div class="header-right">
+        <label class="overlay-toggle">
+          <input type="checkbox" id="overlay-toggle">
+          <span>Show MR = MC Overlay</span>
+        </label>
+        <div class="buff-chip" id="buff-status">No buff</div>
+      </div>
+    </header>
+
+    <section class="game-grid">
+      <aside class="dialogue-panel">
+        <div class="dialogue-log" id="dialogue-log"></div>
+        <div class="goal-card">
+          <h3>Goal</h3>
+          <p id="goal-text">Earn your first profitable day.</p>
+        </div>
+      </aside>
+
+      <section class="chart-panel">
+        <div class="chart-canvas-frame">
+          <canvas id="curveCanvas" width="640" height="360"></canvas>
+        </div>
+        <div class="metrics-grid">
+          <div>
+            <span class="metric-label">Price (P)</span>
+            <span class="metric-value" data-metric="price">—</span>
+          </div>
+          <div>
+            <span class="metric-label">Marginal Revenue</span>
+            <span class="metric-value" data-metric="mr">—</span>
+          </div>
+          <div>
+            <span class="metric-label">Marginal Cost</span>
+            <span class="metric-value" data-metric="mc">—</span>
+          </div>
+          <div>
+            <span class="metric-label">Average Total Cost</span>
+            <span class="metric-value" data-metric="atc">—</span>
+          </div>
+          <div>
+            <span class="metric-label">Profit (π)</span>
+            <span class="metric-value" data-metric="profit">—</span>
+          </div>
+          <div>
+            <span class="metric-label">Brand (B)</span>
+            <span class="metric-value" data-metric="brand">0.0</span>
+          </div>
+          <div>
+            <span class="metric-label">Cumulative π</span>
+            <span class="metric-value" data-metric="cumulative">0.0</span>
+          </div>
+          <div>
+            <span class="metric-label">Rivals (N)</span>
+            <span class="metric-value" data-metric="rivals">2</span>
+          </div>
+        </div>
+
+        <div class="controls-panel">
+          <div class="slider">
+            <label for="qualitySlider">Quality (q)</label>
+            <div class="slider-display">
+              <input type="range" id="qualitySlider" min="1" max="10" step="1" value="5">
+              <span class="slider-value" data-value="quality">5</span>
+            </div>
+          </div>
+          <div class="slider">
+            <label for="adSlider">Advertising (Ad)</label>
+            <div class="slider-display">
+              <input type="range" id="adSlider" min="0" max="100" step="5" value="20">
+              <span class="slider-value" data-value="advertising">20</span>
+            </div>
+          </div>
+          <div class="slider">
+            <label for="outputSlider">Output (Q)</label>
+            <div class="slider-display">
+              <input type="range" id="outputSlider" min="1" max="20" step="1" value="8">
+              <span class="slider-value" data-value="output">8</span>
+            </div>
+          </div>
+          <button id="end-day" class="primary end-day">End Day</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="rush-overlay" class="rush-overlay hidden">
+    <div class="rush-card">
+      <h3>Rush Hour</h3>
+      <p id="rush-status">Steam primed...</p>
+      <div class="rush-progress">
+        <div class="rush-progress-bar" id="rush-progress-bar"></div>
+      </div>
+      <div class="rush-feed" id="rush-feed"></div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <template id="dialogue-line-template">
+    <div class="dialogue-line">
+      <span class="speaker"></span>
+      <span class="line-text"></span>
+    </div>
+  </template>
+
+  <script type="module">
+    import { initGame } from './game/engine.js';
+    initGame();
+  </script>
+</body>
+</html>
