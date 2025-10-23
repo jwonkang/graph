@@ -2,6 +2,8 @@ import {
   state,
   params,
   episodes,
+  roundConcepts,
+  episodeConcepts,
   resetForNewGame,
   advanceRound,
   rivalsCount,
@@ -48,6 +50,69 @@ let gameScreen;
 let priceTauntTriggered = false;
 let rushIntervalId = null;
 
+const profitDialogueVariants = [
+  ({ formatted, round }) => {
+    pushDialogue("You", `Day ${round} closes with profit ${formatted}. Beans well spent.`);
+    pushDialogue("Ms. Park", "Strong pull. Keep those margins tight tomorrow.");
+  },
+  ({ formatted, brand }) => {
+    pushDialogue("You", `Cleared ${formatted} in the till. Brand meter is humming.`);
+    pushDialogue("Ms. Park", `Brand sits at ${brand.toFixed(2)}. Momentum is finally brewing.`);
+  },
+  ({ formatted }) => {
+    pushDialogue("You", `Another profit shot: ${formatted}. Feels like a clean pour.`);
+    pushDialogue("Ms. Park", "Bank it and reset. Rivals sip for weakness.");
+  }
+];
+
+const lossDialogueVariants = [
+  ({ formattedLoss, mrDiff }) => {
+    pushDialogue("You", `Short ${formattedLoss}. MR and MC missed by ${mrDiff.toFixed(2)}.`);
+    pushDialogue("Ms. Park", "Tighten that equality. Dial quality or ads until MR = MC.");
+  },
+  ({ formattedLoss, round }) => {
+    pushDialogue("You", `Day ${round} spilled ${formattedLoss} in losses.`);
+    pushDialogue("Ms. Park", "Losses sting, but the curves still listen. Adjust and rebound.");
+  },
+  ({ formattedLoss, consecutiveLosses }) => {
+    const streak = consecutiveLosses > 1 ? `${consecutiveLosses} losses` : "a loss";
+    pushDialogue("You", `Logged ${formattedLoss} red and ${streak} in a row.`);
+    pushDialogue("Ms. Park", "Breathe. Shift output, watch costs, and reclaim margin.");
+  }
+];
+
+function emitDayOutcomeDialogue(outcome, context) {
+  const pool = outcome === "profit" ? profitDialogueVariants : lossDialogueVariants;
+  if (!pool.length) return;
+  const key = outcome === "profit" ? "profit" : "loss";
+  const index = state.dialogueCycle?.[key] ?? 0;
+  const handler = pool[index % pool.length];
+  handler(context);
+  if (state.dialogueCycle) {
+    state.dialogueCycle[key] = (index + 1) % pool.length;
+  }
+}
+
+function presentConceptScript(script, context = {}) {
+  if (!Array.isArray(script) || !script.length) return;
+  script.forEach(({ speaker, line }) => {
+    if (!speaker || !line) return;
+    const message = typeof line === "function" ? line(context) : line;
+    pushDialogue(speaker, message);
+  });
+}
+
+function presentRoundConcepts(context = {}) {
+  const script = roundConcepts[state.round] ?? roundConcepts.default;
+  presentConceptScript(script, context);
+}
+
+function presentEpisodeConcepts(episodeKey, context = {}) {
+  if (!episodeKey) return;
+  const script = episodeConcepts[episodeKey] ?? [];
+  presentConceptScript(script, context);
+}
+
 export function initGame() {
   resetForNewGame();
   initDialogUI();
@@ -81,7 +146,9 @@ export function initGame() {
   }
 
   computeAndRender();
-  preloadPrologueDialogue();
+  clearDialogue();
+  presentEpisodeConcepts(state.episode, { phase: "prologueIntro", round: state.round });
+  presentRoundConcepts({ phase: "prologue", round: state.round });
 }
 
 function beginCampaign() {
@@ -92,22 +159,25 @@ function beginCampaign() {
   if (gameScreen) {
     gameScreen.classList.remove("hidden");
   }
-  advanceRound();
+  const roundChange = advanceRound();
   updateEpisodeUI();
   clearDialogue();
-  pushDialogue("Ms. Park", "Apron on. Remember: MR = MC. Anything else is latte for ‘losing money.’");
-  pushDialogue("You", "Let’s brew a curve-friendly empire.");
-  pushDialogue("Ms. Park", "Quality shifts demand up, ads boost brand, output sets your price on the demand curve.");
+  if (roundChange?.episodeChanged) {
+    presentEpisodeConcepts(roundChange.currentEpisode, {
+      phase: "episodeIntro",
+      round: state.round,
+      episode: state.episode
+    });
+  }
+  presentRoundConcepts({
+    phase: "dayStart",
+    round: state.round,
+    episode: state.episode,
+    episodeChanged: roundChange?.episodeChanged ?? false
+  });
   priceTauntTriggered = false;
   computeAndRender();
   updateBuffStatus(state.perfectPourBuffActive, state.perfectPourStreak);
-}
-
-function preloadPrologueDialogue() {
-  clearDialogue();
-  pushDialogue("Narrator", "Marketville, dawn. Neon, steam, and way too much caffeine gossip.");
-  pushDialogue("Ms. Park", "Listen up. Demand curve gives you price. MR tells you when to stop pouring. Aim MR = MC.");
-  pushDialogue("You", "Got it. Start button itching already.");
 }
 
 function handleSliderChange(key, value) {
@@ -227,14 +297,22 @@ function resolveDay(metrics) {
 
   if (profit >= 0) {
     const formatted = profit.toFixed(2);
-    pushDialogue("You", `Black numbers! Profit clocked at ${formatted}.`);
-    pushDialogue("Ms. Park", "Nice pour. Remember: profit today, brand tomorrow.");
+    emitDayOutcomeDialogue("profit", {
+      formatted,
+      round: currentRound,
+      brand: state.brand,
+      mrDiff
+    });
     celebrateProfit();
     showToast("Profit achieved. Rent thanks you.", "success");
   } else {
     const formattedLoss = Math.abs(profit).toFixed(2);
-    pushDialogue("You", `Ouch. Lost ${formattedLoss}.`);
-    pushDialogue("Ms. Park", "Below ATC. Center on MR = MC and rethink ads vs quality.");
+    emitDayOutcomeDialogue("loss", {
+      formattedLoss,
+      round: currentRound,
+      mrDiff,
+      consecutiveLosses: state.consecutiveLosses
+    });
     showToast("Loss detected. Adjust those curves.", "warn");
   }
 
@@ -246,10 +324,30 @@ function resolveDay(metrics) {
   updateBuffStatus(state.perfectPourBuffActive, state.perfectPourStreak);
 
   state.rushRunning = false;
-  setControlsDisabled(false);
-  advanceRound();
+  const roundChange = advanceRound();
   updateEpisodeUI();
   computeAndRender();
+  if (roundChange?.episodeChanged) {
+    presentEpisodeConcepts(roundChange.currentEpisode, {
+      phase: "episodeIntro",
+      round: state.round,
+      episode: state.episode,
+      profitLastDay: profit,
+      cumulativeProfit: state.cumulativeProfit
+    });
+  }
+  presentRoundConcepts({
+    profitLastDay: profit,
+    cumulativeProfit: state.cumulativeProfit,
+    brand: state.brand,
+    perfectPourStreak: state.perfectPourStreak,
+    mrDiff,
+    phase: "dayStart",
+    round: state.round,
+    episode: state.episode,
+    episodeChanged: roundChange?.episodeChanged ?? false
+  });
+  setControlsDisabled(false);
 }
 
 function computeAndRender() {
@@ -316,12 +414,8 @@ function updateEpisodeUI() {
   const info = episodes[state.episode] ?? episodes.episode1;
   setSceneHeading(info.title);
   setGoal(info.goal);
-  if (state.round > 0) {
-    const suffix = state.episode === "episode1" ? "Grand Opening" : "Crowd Control";
-    setRoundInfo(state.round, suffix);
-  } else {
-    setRoundInfo(0, "Prologue");
-  }
+  const suffix = info.suffix ?? info.title;
+  setRoundInfo(state.round, suffix);
 }
 
 function triggerRivalTaunt(rival, line) {
